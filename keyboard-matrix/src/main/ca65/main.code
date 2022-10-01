@@ -1,0 +1,239 @@
+;    keyboard-matrix: Display Commodore 64 keyboard matrix with keys pressed.
+;    Copyright (C) 2022  C64PECTRE
+;
+;    This program is free software: you can redistribute it and/or modify
+;    it under the terms of the GNU General Public License as published by
+;    the Free Software Foundation, either version 3 of the License, or
+;    (at your option) any later version.
+;
+;    This program is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;    GNU General Public License for more details.
+;
+;    You should have received a copy of the GNU General Public License
+;    along with this program.  If not, see https://www.gnu.org/licenses/.
+;
+;    Contact: https://github.com/c64pectre/keyboard-matrix/ create an issue
+
+;;; summary: main
+.proc main
+    jsr draw_main_screen
+    jsr register_irq_handler
+    jsr register_nmi_handler
+    ;
+    loop_1:
+    loop_1_do:
+    loop_1_next:
+        bit SIGNAL_QUIT
+        bpl loop_1_do
+    loop_1_end:
+    ;
+   ;jsr forever
+    ;
+    jsr unregister_nmi_handler
+    jsr unregister_irq_handler
+    ;
+    rts
+.endproc
+
+;;; summary: IRQ handler
+.proc irq_handler
+    ; check P.I = 1
+    ;
+    if_1:
+        bit VIC_IR                      ; P.N <- VIC_IR.IRQ
+        bpl if_1_end
+    if_1_then:
+        ; check VIC_IR.IRQ = 1
+        ;
+        ; Surround work by dec/inc border color to check if code is fast enough.
+        ;dec VIC_EC
+        ;
+        ; Clear all VIC interrupts because the only one that can occur is RST.
+        ldbv VIC_IR, %11111111
+        ;
+        ; The Kernal has already set CIA 1 DDRA to outputs and DDRB to inputs,
+        ; so we do not have to push and pop them.
+        ; check CIA_1_DDRA = %11111111
+        ; check CIA_1_DDRB = %00000000
+        ;
+        loop_1:
+            ldbxv SCREEN_TEXT_RAM + 6 * VIC_CHAR_COLUMNS
+            ;
+            ldbv CIA_1_PRA, %11111110
+            ; 0 = active , 1 = inactive
+        loop_1_do:
+            ; Debounce
+            loop_2:
+            loop_2_do:
+                lda CIA_1_PRB
+            loop_2_next:
+                cmp CIA_1_PRB
+                bne loop_2_do
+            loop_2_end:
+            ;
+            sta CL
+            ;
+            loop_3:
+                ldy # 6
+                ;
+                ldahv 8
+            loop_3_do:
+                lsr CL
+                ;
+                loop_4:
+                    ldx # 3
+                loop_4_do:
+                    lda [BX] , y
+                    and # %01111111
+                    if_2:
+                        bcs if_2_end
+                    if_2_then:
+                        ora # %10000000
+                    if_2_end:
+                    ;
+                    sta [BX] , y
+                    ;
+                    iny
+                loop_4_next:
+                    dex
+                    bne loop_4_do
+                loop_4_end:
+                iny
+            loop_3_next:
+                dec AH
+                bne loop_3_do
+            loop_3_end:
+        loop_1_next:
+            addbxv 2 * VIC_CHAR_COLUMNS
+            ;
+            sec
+            rol CIA_1_PRA
+            bcs loop_1_do
+        loop_1_end:
+        ;
+        ;inc VIC_EC
+    if_1_end:
+    ;
+    jmp [CHAIN_IRQ_HANDLER]
+.endproc
+
+;;; summary: Register IRQ handler on VIC raster
+.proc register_irq_handler
+    sei
+        ldw CHAIN_IRQ_HANDLER, KERNAL_CINV
+        ldwv KERNAL_CINV, irq_handler
+        ;
+        ldbv VIC_RST, IRQ_AT_RASTER_LINE
+        lda VIC_CONTROL_1
+        and # VIC_CONTROL_1_RST8_CLR
+        sta VIC_CONTROL_1
+        ;
+        lda VIC_IE
+        ora # VIC_IE_RST_SET
+        sta VIC_IE
+    cli
+    ;
+    rts
+.endproc
+
+;;; summary: Unregister IRQ handler
+.proc unregister_irq_handler
+    sei
+        ldw KERNAL_CINV, CHAIN_IRQ_HANDLER
+        ;
+        lda VIC_IE
+        and # VIC_IE_RST_CLR
+        sta VIC_IE
+    cli
+    ;
+    rts
+.endproc
+
+;;; summary: Loop forever
+.proc forever
+    loop:
+    loop_do:
+        jmp loop_do
+    loop_end:
+    ;
+    rts
+.endproc
+
+;;; summary: Draw main screen
+.proc draw_main_screen
+    lda # CONFIG_SCREEN_BORDER_COLOR
+    sta VIC_EC
+    ;
+    lda # CONFIG_SCREEN_BACKGROUND_COLOR
+    sta VIC_B0C
+    ;
+    ldaxv STR_INIT_MAIN_SCREEN
+    jsr puts
+    ;
+    loop:
+        ldy # 250
+    loop_do:
+        lda SCREEN_MAIN     +   0 - 1 , y
+        sta SCREEN_TEXT_RAM +   0 - 1 , y
+        lda SCREEN_MAIN     + 250 - 1 , y
+        sta SCREEN_TEXT_RAM + 250 - 1 , y
+        lda SCREEN_MAIN     + 500 - 1 , y
+        sta SCREEN_TEXT_RAM + 500 - 1 , y
+        lda SCREEN_MAIN     + 750 - 1 , y
+        sta SCREEN_TEXT_RAM + 750 - 1 , y
+        dey
+        bne loop_do
+    loop_end:
+    ;
+    rts
+.endproc
+
+;;; summary: put null terminated string (AX)
+.proc puts
+    loop:
+        ldy # 0
+    loop_do:
+        lda [AX] , y
+        jsr KERNAL_CHROUT
+        beq loop_end
+    loop_next:
+        iny
+        bne loop_do
+    loop_end:
+    ;
+    rts
+.endproc
+
+;;; summary: Register NMI handler
+.proc register_nmi_handler
+    sei
+        ldw CHAIN_NMI_HANDLER, KERNAL_NMINV
+        ldwv KERNAL_NMINV, nmi_handler
+        ldbv SIGNAL_QUIT, SIGNAL_QUIT_DOWN
+    cli
+    ;
+    rts
+.endproc
+
+;;; summary: Unregister NMI handler
+.proc unregister_nmi_handler
+    sei
+        ldw KERNAL_NMINV, CHAIN_NMI_HANDLER
+    cli
+    rts
+.endproc
+
+;;; summary: NMI handler: Signal quit on RESTORE pressed
+.proc nmi_handler
+    sei
+    pha
+        ldbv SIGNAL_QUIT, SIGNAL_QUIT_UP
+        ;
+        ; Clear keyboard buffer
+        ldbv ZPKERNAL_NDX, 0            ; Used A
+    pla
+    ;
+    rti
+.endproc

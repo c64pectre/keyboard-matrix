@@ -19,7 +19,7 @@ rem    Contact: https://github.com/c64pectre/keyboard-matrix/ create an issue
 set PMP_PROJECT_GROUP_ID=group
 set PMP_PROJECT_ARTIFACT_ID=keyboard-matrix
 set PMP_PROJECT_ARTIFACT_VERSION=1.0.0-SNAPSHOT
-set PMP_PROJECT_PACKAGING=prg
+set PMP_PROJECT_PACKAGING=p
 
 set PMP_COMPILER=ca65
 set PMP_COMPILER_CA65_OPTIONS=--ignore-case --feature bracket_as_indirect --feature org_per_seg

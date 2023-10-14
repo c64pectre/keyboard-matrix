@@ -16,13 +16,4 @@
 ;
 ;    Contact: https://github.com/c64pectre/keyboard-matrix/ create an issue
 
-; Configuration
-
-CONFIG_SCREEN_BORDER_COLOR = COLOR_BLK
-CONFIG_SCREEN_BACKGROUND_COLOR = COLOR_BLK
-CONFIG_SCREEN_TEXT_COLOR = PETSCII_LIGHT_BLUE
-
-IRQ_AT_RASTER_LINE = 251
-
-SIGNAL_QUIT_DOWN = $00
-SIGNAL_QUIT_UP   = $FF
+.include "c64/vic.export.asm"

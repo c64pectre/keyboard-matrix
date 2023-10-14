@@ -1,5 +1,5 @@
 ;    keyboard-matrix: Display Commodore 64 keyboard matrix with keys pressed.
-;    Copyright (C) 2022  C64PECTRE
+;    Copyright (C) 2023  C64PECTRE
 ;
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -18,8 +18,6 @@
 
 .include "c64/cpu.inc"
 .include "c64/memory-map.inc"
-.include "c64/zp.inc"
-.include "c64/p2p3.inc"
 .include "c64/cia-1.inc"
 .include "c64/petscii.inc"
 .include "c64/colors.inc"
@@ -29,17 +27,17 @@
 .include "c64/kernal-r3-internal.inc"
 .include "macros.inc"
 
-.include "main.import"
+.include "main.import.a65"
 
 .include "main.inc"
 
 .segment "CODE"
-.include "main.code"
+.include "main.code.a65"
 
 .segment "RODATA"
-.include "main.rodata"
+.include "main.rodata.a65"
 
 .segment "DATA"
-.include "main.data"
+.include "main.data.a65"
 
-.include "main.export"
+.include "main.export.a65"

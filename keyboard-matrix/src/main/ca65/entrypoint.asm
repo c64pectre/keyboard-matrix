@@ -1,5 +1,5 @@
 ;    keyboard-matrix: Display Commodore 64 keyboard matrix with keys pressed.
-;    Copyright (C) 2022  C64PECTRE
+;    Copyright (C) 2023  C64PECTRE
 ;
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -16,11 +16,11 @@
 ;
 ;    Contact: https://github.com/c64pectre/keyboard-matrix/ create an issue
 
-.include "entrypoint.import"
+.include "entrypoint.import.a65"
 
 .include "entrypoint.inc"
 
 .segment "ENTRYPOINT"
-.include "entrypoint.code"
+.include "entrypoint.code.a65"
 
-.include "entrypoint.export"
+.include "entrypoint.export.a65"

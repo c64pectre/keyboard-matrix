@@ -1,5 +1,5 @@
 ;    keyboard-matrix: Display Commodore 64 keyboard matrix with keys pressed.
-;    Copyright (C) 2022  C64PECTRE
+;    Copyright (C) 2023  C64PECTRE
 ;
 ;    This program is free software: you can redistribute it and/or modify
 ;    it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@
         ;dec VIC_EC
         ;
         ; Clear all VIC interrupts because the only one that can occur is RST.
-        ldbv VIC_IR, %11111111
+        ld_b_v VIC_IR, %11111111
         ;
         ; The Kernal has already set CIA 1 DDRA to outputs and DDRB to inputs,
         ; so we do not have to push and pop them.
@@ -59,9 +59,9 @@
         ; check CIA_1_DDRB = %00000000
         ;
         loop_1:
-            ldbxv SCREEN_TEXT_RAM + 6 * VIC_CHAR_COLUMNS
+            ld_bx_v SCREEN_TEXT_RAM_BASE + 6 * VIC_CHAR_COLUMNS
             ;
-            ldbv CIA_1_PRA, %11111110
+            ld_b_v CIA_1_PRA, %11111110
             ; 0 = active , 1 = inactive
         loop_1_do:
             ; Debounce
@@ -78,7 +78,7 @@
             loop_3:
                 ldy # 6
                 ;
-                ldahv 8
+                ld_ah_v 8
             loop_3_do:
                 lsr CL
                 ;
@@ -106,7 +106,7 @@
                 bne loop_3_do
             loop_3_end:
         loop_1_next:
-            addbxv 2 * VIC_CHAR_COLUMNS
+            add_bx_v 2 * VIC_CHAR_COLUMNS
             ;
             sec
             rol CIA_1_PRA
@@ -122,10 +122,10 @@
 ;;; summary: Register IRQ handler on VIC raster
 .proc register_irq_handler
     sei
-        ldw CHAIN_IRQ_HANDLER, KERNAL_CINV
-        ldwv KERNAL_CINV, irq_handler
+        ld_w CHAIN_IRQ_HANDLER, KERNAL_CINV
+        ld_w_v KERNAL_CINV, irq_handler
         ;
-        ldbv VIC_RST, IRQ_AT_RASTER_LINE
+        ld_b_v VIC_RST, IRQ_AT_RASTER_LINE
         lda VIC_CONTROL_1
         and # VIC_CONTROL_1_RST8_CLR
         sta VIC_CONTROL_1
@@ -141,7 +141,7 @@
 ;;; summary: Unregister IRQ handler
 .proc unregister_irq_handler
     sei
-        ldw KERNAL_CINV, CHAIN_IRQ_HANDLER
+        ld_w KERNAL_CINV, CHAIN_IRQ_HANDLER
         ;
         lda VIC_IE
         and # VIC_IE_RST_CLR
@@ -169,20 +169,20 @@
     lda # CONFIG_SCREEN_BACKGROUND_COLOR
     sta VIC_B0C
     ;
-    ldaxv STR_INIT_MAIN_SCREEN
+    ld_ax_v STR_INIT_MAIN_SCREEN
     jsr puts
     ;
     loop:
         ldy # 250
     loop_do:
         lda SCREEN_MAIN     +   0 - 1 , y
-        sta SCREEN_TEXT_RAM +   0 - 1 , y
+        sta SCREEN_TEXT_RAM_BASE +   0 - 1 , y
         lda SCREEN_MAIN     + 250 - 1 , y
-        sta SCREEN_TEXT_RAM + 250 - 1 , y
+        sta SCREEN_TEXT_RAM_BASE + 250 - 1 , y
         lda SCREEN_MAIN     + 500 - 1 , y
-        sta SCREEN_TEXT_RAM + 500 - 1 , y
+        sta SCREEN_TEXT_RAM_BASE + 500 - 1 , y
         lda SCREEN_MAIN     + 750 - 1 , y
-        sta SCREEN_TEXT_RAM + 750 - 1 , y
+        sta SCREEN_TEXT_RAM_BASE + 750 - 1 , y
         dey
         bne loop_do
     loop_end:
@@ -209,9 +209,9 @@
 ;;; summary: Register NMI handler
 .proc register_nmi_handler
     sei
-        ldw CHAIN_NMI_HANDLER, KERNAL_NMINV
-        ldwv KERNAL_NMINV, nmi_handler
-        ldbv SIGNAL_QUIT, SIGNAL_QUIT_DOWN
+        ld_w CHAIN_NMI_HANDLER, KERNAL_NMINV
+        ld_w_v KERNAL_NMINV, nmi_handler
+        ld_b_v SIGNAL_QUIT, SIGNAL_QUIT_DOWN
     cli
     ;
     rts
@@ -220,7 +220,7 @@
 ;;; summary: Unregister NMI handler
 .proc unregister_nmi_handler
     sei
-        ldw KERNAL_NMINV, CHAIN_NMI_HANDLER
+        ld_w KERNAL_NMINV, CHAIN_NMI_HANDLER
     cli
     rts
 .endproc
@@ -229,10 +229,10 @@
 .proc nmi_handler
     sei
     pha
-        ldbv SIGNAL_QUIT, SIGNAL_QUIT_UP
+        ld_b_v SIGNAL_QUIT, SIGNAL_QUIT_UP
         ;
         ; Clear keyboard buffer
-        ldbv ZPKERNAL_NDX, 0            ; Used A
+        ld_b_v ZPKERNAL_NDX, 0            ; Used A
     pla
     ;
     rti
